@@ -13,7 +13,7 @@ export class Pm2Service {
             pm2.connect(false, (err: any) => {
                 if (err) {
                     reject(new Error(err));
-                    
+
                 }
                 return resolve(err);
             });
@@ -21,7 +21,7 @@ export class Pm2Service {
     }
 
     public startPM2(options: any): Observable<any> {
-        return of(pm2.start(options, (err:any, proc:any) => {
+        return of(pm2.start(options, (err: any, proc: any) => {
             if (err) {
                 throw (err);
             }
@@ -29,10 +29,13 @@ export class Pm2Service {
     }
 
     public disconnect() {
-        pm2.disconnect((err:any) => {
-            if (err) {
-                throw (err);
-            }
-        });
+        return new Promise((resolve, reject): any => {
+            pm2.disconnect((err: any) => {
+                if (err) {
+                    reject(new Error(err));
+                }
+                return resolve(err);
+            });
+        })
     }
 }

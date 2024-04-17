@@ -1,25 +1,26 @@
 
 import { assign, createMachine, fromPromise, interpret, setup, createActor, waitFor, log, sendTo, raise, fromObservable } from 'xstate';
 import { Pm2Service } from './pm2';
-// const pm2 = require('pm2')
+import { of, Observable, interval } from 'rxjs';
+const pm22 = require('pm2')
 
 export class StateMachinesService {
     pm2: Pm2Service = new Pm2Service;
     constructor() { }
-   
-      
+
+
 
 
     pm2state = setup({
         actors: {
             connect: fromPromise<any, any>(async () => {
-               await this.pm2.connectPM2();
+                await this.pm2.connectPM2();
             }),
-            start: fromObservable<any, { options: any }>(({ input }) => {
-                this.pm2.startPM2(input.options)
+            start: fromObservable<any, any>(({ input }) => {
+                return this.pm2.startPM2(input.options);
             }),
-            disconnect: fromPromise(async ()=>{
-                this.pm2.disconnect();
+            disconnect: fromPromise(async () => {
+                await this.pm2.disconnect();
             })
         }
     }).
@@ -31,6 +32,22 @@ export class StateMachinesService {
                     invoke: {
                         src: 'connect',
                         onDone: {
+                            target: 'start',
+                        },
+                        onError: {
+                            actions: () => console.log('error')
+                        }
+                    },
+                },
+                start: {
+                    invoke: {
+
+                        src: 'start',
+                        input: ({ }) => ({ options: { script: './src/index.js', name: 'test' } }),
+                        onSnapshot: {
+                            actions: ({ event }) => console.log(event.snapshot)
+                        },
+                        onDone: {
                             target: 'disconnect',
                         },
                         onError: {
@@ -38,19 +55,6 @@ export class StateMachinesService {
                         }
                     },
                 },
-                // start: {
-                //     invoke: {
-                        
-                //         src: 'start',
-                //         input: ({ }) => ({ options: { script: 'testpm2.js', name: 'test' } }),
-                //         onDone: {
-                //             target: 'list',
-                //         },
-                //         onError: {
-                //             actions: () => console.log('error')
-                //         }
-                //     },
-                // },
                 // list: {
                 //     invoke: {
                 //         src: 'list',
